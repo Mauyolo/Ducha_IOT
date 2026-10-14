@@ -1,0 +1,36 @@
+services:
+  broker:
+    image: eclipse-mosquitto:2
+    container_name: smcdi-mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+    restart: unless-stopped
+
+  web:
+    build: .
+    container_name: smcdi-web
+    depends_on:
+      - broker
+    environment:
+      WEB_HOST: 0.0.0.0
+      WEB_PORT: 8000
+      SIMULATION: ${SIMULATION:-1}
+      SEED_DEMO: ${SEED_DEMO:-1}
+      MQTT_ENABLED: "1"
+      MQTT_HOST: broker
+      MQTT_PORT: "1883"
+      MQTT_TLS: "0"
+      MQTT_TOPIC_ROOT: smcdi
+      ADMIN_USER: ${ADMIN_USER:-admin.ucsm}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin2026!}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+volumes:
+  mosquitto_data:
