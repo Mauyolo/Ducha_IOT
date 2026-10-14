@@ -1,0 +1,12 @@
+# Reemplazar nombres de usuario por los creados con mosquitto_passwd.
+user smcdi-backend
+topic read smcdi/device/+/telemetry
+topic read smcdi/device/+/events
+topic read smcdi/device/+/status
+topic write smcdi/device/+/commands
+
+user ducha-01
+topic write smcdi/device/DUCHA-01/telemetry
+topic write smcdi/device/DUCHA-01/events
+topic write smcdi/device/DUCHA-01/status
+topic read smcdi/device/DUCHA-01/commands
