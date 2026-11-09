@@ -14,6 +14,20 @@ Proyecto funcional para el PFC **“Monitoreo y reducción del consumo de agua e
 - Exportación CSV/XLSX, auditoría, alertas y simulador integrado para presentar el sistema incluso sin el hardware conectado.
 - Configuración Docker/Mosquitto, scripts para macOS y pruebas automáticas.
 
+## Inicio rápido en Windows
+
+Doble clic en `INICIAR_SIMULACION.bat`. La primera vez crea `.venv`, instala dependencias, copia `.env.example` a `.env`, prepara la base y abre `http://127.0.0.1:8000` en el navegador. Para volver a los datos de demostración originales usa `REINICIAR_DEMO.bat` (con el servidor cerrado) o el botón de reinicio en **Configuración**.
+
+Desde la terminal de VS Code (en la carpeta raíz del proyecto):
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python tools\setup_local.py
+python -m uvicorn backend.server:app --host 127.0.0.1 --port 8000
+```
+
 ## Inicio rápido en MacBook
 
 La forma más simple es hacer doble clic en `INICIAR_MAC.command`. En el primer inicio se crea `.venv`, se instalan las dependencias, se copia `.env.example` a `.env` y se abre la aplicación en el navegador.
