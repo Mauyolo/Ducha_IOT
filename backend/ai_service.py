@@ -19,6 +19,10 @@ FEATURE_NAMES = [
     "hist_avg_temp",
     "hour",
     "weekday",
+    # 1 = sesión en modo inteligente (con objetivo y retroalimentación), 0 = tradicional.
+    # Sin esta variable el modelo no puede distinguir ambas condiciones del experimento
+    # y su R² cae por debajo de cero.
+    "modo_inteligente",
 ]
 
 
@@ -46,6 +50,7 @@ def _history_feature_rows() -> tuple[list[list[float]], list[float]]:
                         sum((h["avg_temp_c"] or 24) for h in history) / len(history),
                         float(started.hour),
                         float(started.weekday()),
+                        1.0 if s["mode"] == "INTELIGENTE" else 0.0,
                     ])
                     y.append(float(s["volume_total_l"]))
                 history.append(s)
@@ -130,6 +135,9 @@ def resident_features(resident_id: int, when: datetime | None = None) -> tuple[l
         sum((r["avg_temp_c"] or 24) for r in rows) / len(rows),
         float(when.hour),
         float(when.weekday()),
+        # La predicción estima el consumo esperado SIN intervención (línea base
+        # tradicional); el objetivo personalizado aplica la reducción sobre ese valor.
+        0.0,
     ], len(rows)
 
 
@@ -150,10 +158,17 @@ def predict_for_resident(resident_id: int, reduction_pct: float | None = None, s
     model_path = Path(model_row["file_path"])
     if not model_path.is_absolute():
         model_path = config.MODELS_DIR / model_path
-    if not model_path.exists():
-        return {"ok": False, "reason": "MODEL_NOT_AVAILABLE"}
-
-    package = joblib.load(model_path)
+    package = joblib.load(model_path) if model_path.exists() else None
+    if not package or package.get("features") != FEATURE_NAMES:
+        # Modelo ausente o entrenado con otro conjunto de variables: se reentrena.
+        trained = train_models()
+        if not trained.get("ok"):
+            return trained
+        model_row = active_model()
+        model_path = config.MODELS_DIR / model_row["file_path"]
+        if not model_path.exists():
+            return {"ok": False, "reason": "MODEL_NOT_AVAILABLE"}
+        package = joblib.load(model_path)
     predicted = float(package["model"].predict([features])[0])
     predicted = max(5.0, predicted)
     target = max(5.0, predicted * (1.0 - reduction_pct / 100.0))
